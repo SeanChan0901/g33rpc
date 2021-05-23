@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SeanChan0901/geerpc"
-	"github.com/SeanChan0901/geerpc/serializer"
+	"github.com/SeanChan0901/g33rpc"
+	"github.com/SeanChan0901/g33rpc/serializer"
 	"log"
 	"net"
 	"time"
@@ -17,7 +17,7 @@ func startServer(addr chan string) {
 	}
 	log.Println("start rpc server on", listener.Addr())
 	addr <- listener.Addr().String()
-	geerpc.Accept(listener)
+	g33rpc.Accept(listener)
 }
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	defer func(){_ = conn.Close()}()
 
 	time.Sleep(time.Second)
-	_ = json.NewEncoder(conn).Encode(geerpc.DefaultOption)
+	_ = json.NewEncoder(conn).Encode(g33rpc.DefaultOption)
 	ss := serializer.NewGobSerializer(conn)
 	for i := 0; i < 5; i ++ {
 		time.Sleep(time.Second)

@@ -1,9 +1,9 @@
-package geerpc
+package g33rpc
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SeanChan0901/geerpc/serializer"
+	"github.com/SeanChan0901/g33rpc/serializer"
 	"io"
 	"log"
 	"net"
@@ -60,7 +60,7 @@ func (server *Server) ServeConn(conn io.ReadWriteCloser) {
 
 	f := serializer.NewSerializerMap[opt.CodeType]
 	if f == nil {
-		log.Println("rpc server: invalid codec type %s", opt.CodeType)
+		log.Println("rpc server: invalid serializer type %s", opt.CodeType)
 		return
 	}
 
