@@ -129,6 +129,6 @@ func (server *Server) sendResponse(ss serializer.Serializer, h *serializer.Heade
 func (server *Server) handleRequest(ss serializer.Serializer, req *request, sending *sync.Mutex, wg *sync.WaitGroup) {
 	defer wg.Done()
 	log.Println(req.h, req.argv.Elem())
-	req.replyv = reflect.ValueOf(fmt.Sprintf("geerpc response : %d", req.h.Seq))
+	req.replyv = reflect.ValueOf(fmt.Sprintf("g33rpc response : %d", req.h.Seq))
 	server.sendResponse(ss, req.h, req.replyv.Interface(), sending)
 }
