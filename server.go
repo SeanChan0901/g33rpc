@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
 	"reflect"
 	"strings"
 	"sync"
@@ -15,6 +16,13 @@ import (
 )
 
 const MagicNumber = 0x3bef5c
+
+// HTTP support
+const (
+	connected     		= "200 Connected to G33 RPC"
+	defaultRPCPath		= "/_g33rpc_"
+	defaultDebugPath 	= "/debug/g33rpc"
+)
 
 type Option struct {
 	CodeType    	serializer.Type   // MagicNumber marks that's a g33rpc request
@@ -34,10 +42,12 @@ type Server struct{
 	serviceMap sync.Map
 }
 
+// NewServer returns a new Server.
 func NewServer() *Server {
 	return &Server{}
 }
 
+// DefaultServer is the default instance of *Server.
 var DefaultServer = NewServer()
 
 // Register publishes in the server the set of methods of the receiver
@@ -74,6 +84,14 @@ func (server *Server) findService(serviceMethod string) (svc *service, mtype *me
 	return
 }
 
+// request stores all information of a call
+type request struct {
+	h				*serializer.Header  // header of request
+	argv, replyv	reflect.Value  		// argv and replyv of request
+	mtype			*methodType
+	svc				*service
+}
+
 func (server *Server) Accept(listener net.Listener) {
 	for {
 		conn, err := listener.Accept()
@@ -89,6 +107,8 @@ func Accept(listener net.Listener) {
 	DefaultServer.Accept(listener)
 }
 
+// ServeConn runs the server on a single connection.
+// ServeConn blocks, serving the connection until the client hangs up.
 func (server *Server) ServeConn(conn io.ReadWriteCloser) {
 	defer func() { _ = conn.Close()}()
 	var opt Option
@@ -153,14 +173,6 @@ func (server *Server) serveHandler(ss serializer.Serializer, opt *Option) {
 	}
 	wg.Wait()
 	_ = ss.Close()
-}
-
-// request stores all information of a call
-type request struct {
-	h 				*serializer.Header  // header of request
-	argv, replyv 	reflect.Value  		// argv and replyv of request
-	mtype 			*methodType
-	svc 			*service
 }
 
 func (server *Server) readRequestHeader(ss serializer.Serializer) (*serializer.Header, error) {
@@ -254,4 +266,36 @@ func (server *Server) handleRequest(ss serializer.Serializer, req *request, send
 	}
 	server.sendResponse(ss, req.h, req.replyv.Interface(), sending)
 }
- */
+*/
+
+// ServerHTTP implements an http.Hander that answers RPC requests
+func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if req.Method != "CONNECT" {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		_, _ = io.WriteString(w, "405 must CONNECT\n")
+		return
+	}
+	conn, _, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		log.Print("rpc hijacking", req.RemoteAddr, ": ", err.Error())
+		return
+	}
+	_, _ = io.WriteString(conn, "HTTP/1.0" + connected + "\n\n")
+	server.ServeConn(conn)
+}
+
+// HandleHTTP registers an HTTP handler for RPC message on rpcPath
+// and a debugging handler on debugPath
+// IT is still necessary to invoke http.Serve(), typically in a go statement
+func (server *Server) HandleHTTP() {
+	http.Handle(defaultRPCPath, server)
+	http.Handle(defaultDebugPath, debugHTTP{server})
+	log.Println("rpc server debug path : ", defaultDebugPath)
+}
+
+// HandleHTTP is a convenient approach for default server to register HTTP handlers
+func HandleHTTP() {
+	DefaultServer.HandleHTTP()
+}
+

@@ -52,8 +52,9 @@ func TestClient_Call(t *testing.T) {
 // test connection timeout
 func TestClient_dialTimeout(t *testing.T) {
 	t.Parallel()
-	l, _ := net.Listen("tcp", ":0")
+	l, _ := net.Listen("tcp", ":0")  // choose a free port
 
+	// newClient spend 2s
 	f := func(conn net.Conn, opt *Option) (client *Client, err error) {
 		_ = conn.Close()
 		time.Sleep(time.Second * 2)
