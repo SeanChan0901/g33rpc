@@ -102,7 +102,7 @@ func (client * Client) Close() error {
 }
 
 // IsAvailable return true if the client dose work
-func (client *Client) isAvailable() bool {
+func (client *Client) IsAvailable() bool {
 	client.mu.Lock()
 	defer client.mu.Unlock()
 	return !client.shutdown && !client.closing  // not shutdown and not closing
