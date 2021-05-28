@@ -14,7 +14,7 @@ import (
 
 type Foo int
 
-type Args struct {Num1, Num2 int}
+type Args struct{ Num1, Num2 int }
 
 func (f Foo) Sum(args Args, reply *int) error {
 	*reply = args.Num1 + args.Num2
@@ -39,7 +39,7 @@ func startServer(registryAddr string, wg *sync.WaitGroup) {
 	l, _ := net.Listen("tcp", ":0")
 	server := g33rpc.NewServer()
 	_ = server.Register(&foo)
-	registry.Heartbeat(registryAddr, "tcp@" + l.Addr().String(), 0)
+	registry.Heartbeat(registryAddr, "tcp@"+l.Addr().String(), 0)
 	wg.Done()
 	server.Accept(l)
 }
@@ -79,17 +79,15 @@ func call(registry string) {
 func broadcast(registry string) {
 	d := xclient.NewG33RegistryDiscovery(registry, 0)
 	xc := xclient.NewXClient(d, xclient.RandomSelect, nil)
-	defer func() {
-		_ = xc.Close()
-	}()
+	defer func() { _ = xc.Close() }()
 	var wg sync.WaitGroup
-	for i := 0; i < 5; i ++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			foo(xc, context.Background(), "broadcast", "Foo.Sum", &Args{Num1 : i, Num2 : i * i})
+			foo(xc, context.Background(), "broadcast", "Foo.Sum", &Args{Num1: i, Num2: i * i})
 			// expect 2 - 5 timeout
-			ctx, _ := context.WithTimeout(context.Background(), time.Second * 2)
+			ctx, _ := context.WithTimeout(context.Background(), time.Second*2)
 			foo(xc, ctx, "broadcast", "Foo.Sleep", &Args{Num1: i, Num2: i * i})
 		}(i)
 	}

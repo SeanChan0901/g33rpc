@@ -38,7 +38,7 @@ func (d *G33RegistryDiscovery) Update(servers []string) error {
 
 func (d *G33RegistryDiscovery) Refresh() error {
 	d.mu.Lock()
-	defer d.mu.Lock()
+	defer d.mu.Unlock()
 	if d.lastUpdate.Add(d.timeout).After(time.Now()) {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (d *G33RegistryDiscovery) Refresh() error {
 		return err
 	}
 	servers := strings.Split(resp.Header.Get("X-G33rpc-Servers"), ",")
-	d.servers = make([]string, len(servers))
+	d.servers = make([]string, 0, len(servers))
 	for _, server := range servers {
 		if strings.TrimSpace(server) != "" {
 			d.servers = append(d.servers, strings.TrimSpace(server))
